@@ -2,522 +2,511 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <title>导航地址管理</title>
 <style>
     * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-    body {
-        font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", sans-serif;
-        background: #f2f2f7; color: #1c1c1e; padding-bottom: 40px;
-    }
-    .header {
-        background: #fff; padding: 16px; position: sticky; top: 0; z-index: 10;
-        border-bottom: 1px solid #e5e5ea;
-    }
+    body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; background: #f2f2f7; }
+    .page { background: #f2f2f7; min-height: 100vh; padding-bottom: 40px; }
+    .header { background: #fff; padding: 16px; position: sticky; top: 0; z-index: 10; border-bottom: 1px solid #e5e5ea; }
     .title { font-size: 18px; font-weight: 600; text-align: center; margin-bottom: 12px; }
-    .location-bar {
-        display: flex; align-items: center; justify-content: space-between;
-        font-size: 13px; color: #666;
-    }
+    .location-bar { display: flex; align-items: center; justify-content: space-between; font-size: 13px; color: #666; }
     .location-text { display: flex; align-items: center; gap: 6px; flex: 1; overflow: hidden; }
     .location-dot { width: 8px; height: 8px; border-radius: 50%; background: #ccc; flex-shrink: 0; }
-    .location-dot.loading { background: #f0ad4e; animation: blink 1s infinite; }
+    .location-dot.loading { background: #f0ad4e; }
     .location-dot.ok { background: #34c759; }
     .location-dot.fail { background: #ff3b30; }
-    .location-text span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .refresh-btn { color: #007aff; font-size: 13px; padding: 4px 8px; flex-shrink: 0; }
-    @keyframes blink { 0%,100%{opacity:1;} 50%{opacity:.3;} }
-
-    .add-section {
-        background: #fff; padding: 12px; display: flex; gap: 8px; align-items: flex-start;
-        position: sticky; top: 88px; z-index: 9; border-bottom: 1px solid #e5e5ea;
-    }
+    .location-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .refresh-btn { color: #007aff; font-size: 13px; padding: 4px 8px; flex-shrink: 0; cursor: pointer; }
+    .add-section { background: #fff; padding: 12px; display: flex; gap: 8px; align-items: flex-start; position: sticky; top: 73px; z-index: 9; border-bottom: 1px solid #e5e5ea; }
     .input-wrap { flex: 1; position: relative; }
-    .address-input {
-        width: 100%; padding: 10px 12px; border: 1px solid #d1d1d6; border-radius: 10px;
-        font-size: 15px; outline: none;
-    }
+    .address-input { width: 100%; padding: 10px 12px; border: 1px solid #d1d1d6; border-radius: 10px; font-size: 15px; outline: none; box-sizing: border-box; }
     .address-input:focus { border-color: #007aff; }
-
-    /* 下拉列表 */
-    .suggestions {
-        position: absolute; top: calc(100% + 4px); left: 0; right: 0;
-        background: #fff; border-radius: 10px; box-shadow: 0 4px 16px rgba(0,0,0,.15);
-        max-height: 320px; overflow-y: auto; z-index: 20; display: none;
-    }
-    .suggestions.active { display: block; }
+    .suggestions { position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: #fff; border-radius: 10px; box-shadow: 0 4px 16px rgba(0,0,0,.15); max-height: 320px; overflow-y: auto; z-index: 20; }
     .suggestion-item { padding: 10px 12px; border-bottom: 1px solid #f0f0f0; cursor: pointer; }
     .suggestion-item:last-child { border-bottom: none; }
     .suggestion-item:active { background: #f2f2f7; }
     .suggestion-name { font-size: 15px; color: #1c1c1e; display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
-    .suggestion-name em { color: #007aff; font-style: normal; font-weight: 600; }
     .suggestion-dist { font-size: 12px; color: #34c759; flex-shrink: 0; font-weight: 500; }
     .suggestion-address { font-size: 12px; color: #999; margin-top: 2px; }
-    .suggestion-empty { padding: 12px; font-size: 13px; color: #999; text-align: center; }
-
-    .btn-add {
-        background: #007aff; color: #fff; border: none; padding: 10px 18px;
-        border-radius: 10px; font-size: 15px; font-weight: 500; white-space: nowrap;
-    }
-
+    .btn-add { background: #007aff; color: #fff; border: none; padding: 10px 18px; border-radius: 10px; font-size: 15px; font-weight: 500; white-space: nowrap; cursor: pointer; }
+    .loc-action { background: #e8f0fe; color: #007aff; border: none; padding: 8px 12px; border-radius: 8px; font-size: 13px; margin: 0 12px 10px; text-align: left; width: calc(100% - 24px); cursor: pointer; }
     .list { padding: 12px; }
     .list-title { font-size: 14px; color: #666; margin-bottom: 8px; }
-    .addr-card {
-        background: #fff; border-radius: 12px; padding: 14px; margin-bottom: 10px;
-        display: flex; align-items: center; gap: 12px; box-shadow: 0 1px 3px rgba(0,0,0,.04);
-        cursor: pointer;
-    }
-    .addr-icon {
-        width: 40px; height: 40px; border-radius: 8px; background: #e8f0fe;
-        display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;
-    }
+    .addr-card { background: #fff; border-radius: 12px; padding: 14px; margin-bottom: 10px; display: flex; align-items: center; gap: 12px; box-shadow: 0 1px 3px rgba(0,0,0,.04); cursor: pointer; }
+    .addr-icon { width: 40px; height: 40px; border-radius: 8px; background: #e8f0fe; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
     .addr-info { flex: 1; overflow: hidden; }
     .addr-name { font-size: 16px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .addr-remark { font-size: 12px; color: #999; margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .addr-coord { font-size: 12px; color: #999; margin-top: 2px; display: flex; align-items: center; gap: 6px; }
     .addr-dist { color: #34c759; font-weight: 500; }
-    .addr-delete {
-        color: #ff3b30; font-size: 20px; padding: 4px 8px; flex-shrink: 0; line-height: 1;
-    }
+    /* 编辑+删除按钮区域 */
+    .addr-actions { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
+    .addr-edit { color: #8e8e93; font-size: 18px; padding: 4px 8px; cursor: pointer; line-height: 1; }
+    .addr-delete { color: #ff3b30; font-size: 20px; padding: 4px 8px; cursor: pointer; line-height: 1; }
     .empty { text-align: center; color: #999; padding: 60px 20px; }
-
     .footer-tip { text-align: center; font-size: 12px; color: #999; margin-top: 20px; padding: 0 20px; }
+    .key-tip { margin: 12px; padding: 12px 14px; background: #fff4e5; border: 1px solid #ffd591; border-radius: 10px; font-size: 13px; color: #8a6d3b; line-height: 1.7; }
+    .toast { position: fixed; left: 50%; top: 50%; transform: translate(-50%,-50%); background: rgba(0,0,0,.75); color: #fff; padding: 10px 20px; border-radius: 8px; font-size: 14px; z-index: 100; white-space: nowrap; }
+    .diag { margin: 12px; padding: 10px 12px; background: #eef; border: 1px solid #ccd; border-radius: 10px; font-size: 12px; color: #335; white-space: pre-wrap; }
 
-    .toast {
-        position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
-        background: rgba(0,0,0,.75); color: #fff; padding: 10px 20px; border-radius: 8px;
-        font-size: 14px; z-index: 100; opacity: 0; transition: opacity .3s; white-space: nowrap;
-    }
-    .toast.active { opacity: 1; }
-
-    .key-tip {
-        margin: 12px; padding: 12px 14px; background: #fff4e5; border: 1px solid #ffd591;
-        border-radius: 10px; font-size: 13px; color: #8a6d3b; line-height: 1.7;
-    }
-    .key-tip code { background: #f0f0f0; padding: 1px 5px; border-radius: 3px; font-family: monospace; }
-    .key-tip a { color: #007aff; }
-
-    .loc-action {
-        background: #e8f0fe; color: #007aff; border: none; padding: 8px 12px;
-        border-radius: 8px; font-size: 13px; margin: 0 12px 10px; display: block; width: calc(100% - 24px);
-        text-align: left; cursor: pointer;
-    }
-    .loc-action:active { opacity: .7; }
+    /* 编辑弹窗样式 */
+    .modal-mask { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,.4); z-index: 200; display: flex; align-items: center; justify-content: center; padding: 20px; }
+    .modal-box { background: #fff; border-radius: 14px; width: 100%; max-width: 400px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,.2); }
+    .modal-title { font-size: 17px; font-weight: 600; text-align: center; margin-bottom: 20px; }
+    .modal-input-group { margin-bottom: 16px; }
+    .modal-label { font-size: 14px; color: #666; margin-bottom: 6px; display: block; }
+    .modal-input { width: 100%; padding: 12px; border: 1px solid #d1d1d6; border-radius: 10px; font-size: 15px; outline: none; box-sizing: border-box; }
+    .modal-input:focus { border-color: #007aff; }
+    .modal-actions { display: flex; gap: 12px; margin-top: 24px; }
+    .modal-btn { flex: 1; padding: 12px; border-radius: 10px; font-size: 16px; font-weight: 500; cursor: pointer; border: none; }
+    .modal-btn-cancel { background: #f2f2f7; color: #333; }
+    .modal-btn-save { background: #007aff; color: #fff; }
 </style>
 </head>
 <body>
-
-<div class="header">
-    <div class="title">导航地址管理</div>
-    <div class="location-bar">
-        <div class="location-text">
-            <div class="location-dot" id="locDot"></div>
-            <span id="locText">正在定位…</span>
+<div class="page">
+    <div class="header">
+        <div class="title">导航地址管理</div>
+        <div class="location-bar">
+            <div class="location-text">
+                <div class="location-dot" id="locDot"></div>
+                <span class="location-label" id="locText">正在定位…</span>
+            </div>
+            <span class="refresh-btn" id="refreshBtn">刷新</span>
         </div>
-        <div class="refresh-btn" onclick="getCurrentLocation(false)">刷新</div>
+    </div>
+
+    <div class="add-section">
+        <div class="input-wrap">
+            <input class="address-input" id="keyword" placeholder="输入地名/店名，如：超市、学校" autocomplete="off">
+            <div class="suggestions" id="suggestBox"></div>
+        </div>
+        <button class="btn-add" id="addBtn">添加</button>
+    </div>
+
+    <button class="loc-action" id="locAction" style="display:none">➕ 将「当前位置」加入导航列表</button>
+
+    <div class="list" id="listBox"></div>
+    <div class="empty" id="emptyBox">暂无地址，添加后点击即可导航</div>
+
+    <div class="footer-tip">点击地址卡片可直接跳转高德地图导航 🗺️</div>
+    <div class="key-tip" id="keyTip"></div>
+    <div class="diag" id="diagBox"></div>
+
+    <!-- 编辑弹窗 -->
+    <div class="modal-mask" id="editModal" style="display:none;">
+        <div class="modal-box">
+            <div class="modal-title">编辑地址</div>
+            <div class="modal-input-group">
+                <label class="modal-label">地址名称 *</label>
+                <input class="modal-input" id="editName" placeholder="请输入地址名称，如：接娃奶茶">
+            </div>
+            <div class="modal-input-group">
+                <label class="modal-label">备注（可选）</label>
+                <input class="modal-input" id="editRemark" placeholder="如：B1层停车场、走西门最近">
+            </div>
+            <div class="modal-actions">
+                <button class="modal-btn modal-btn-cancel" id="editCancel">取消</button>
+                <button class="modal-btn modal-btn-save" id="editSave">保存</button>
+            </div>
+        </div>
     </div>
 </div>
-
-<div class="add-section">
-    <div class="input-wrap">
-        <input type="text" class="address-input" id="addressInput" placeholder="输入地名/店名，如：超市、学校" autocomplete="off">
-        <div class="suggestions" id="suggestions"></div>
-    </div>
-    <button class="btn-add" onclick="manualAdd()">添加</button>
-</div>
-
-<!-- 「当前位置」快捷添加按钮（定位成功后显示） -->
-<button class="loc-action" id="locAction" style="display:none;" onclick="addCurrentLocation()">
-    ➕ 将「当前位置」加入导航列表
-</button>
-
-<div class="list" id="listContainer"></div>
-
-<div class="footer-tip">点击地址卡片可直接跳转高德地图导航 🗺️</div>
-
-<!-- Key 自检诊断提示（正常时隐藏，异常时显示具体原因） -->
-<div id="keyTip" class="key-tip" style="display:none;"></div>
-
-<div class="toast" id="toast"></div>
 
 <script>
-    // ==================== ⚠️ Key 配置 ====================
-    //   AMAP_WEB_KEY ：「Web 服务」Key —— 搜索 / 逆地理编码（restapi.amap.com）
-    //   AMAP_JS_KEY  ：「Web 端 (JS API)」Key —— 仅嵌入地图时用（本文件未用，可留空）
-    //   你的 bd1097f2… 是「Web 端 JS API」Key，不能直接调 restapi，需再建一个「Web 服务」Key 填下面
-    const AMAP_WEB_KEY = 'aafb549191e1ababd28f5327c82fc911';                                    // ← 填「Web 服务」Key
-    const AMAP_JS_KEY  = 'bd1097f295862bc1d063bd88fc7cf3d8';    // 已填（JS API Key，本文件未使用）
-    const AMAP_SEC_CODE = 'e6da02c3eecd8f5dd6e09278a29da2ce';   // 安全密钥（本文件未使用）
+// ============================================================
+// 配置：填「Web 服务」Key（搜索/逆地理需要）；导航本身不收费
+// ============================================================
+const AMAP_WEB_KEY = 'aafb549191e1ababd28f5327c82fc911';
 
-    // ==================== 全局状态 ====================
-    let addresses = JSON.parse(localStorage.getItem('navAddresses') || '[]');
-    let currentPos = null;       // {lng, lat}
-    let currentAddr = '';        // 定位详细地址（市·区·街道…）
-    let currentCity = '';        // 市级，用于搜索
-    let currentDistrict = '';    // 区/县级，用于缩小搜索范围
+// ============================================================
+// 工具：唯一 id + 坐标校验（修复"地址空白"的核心）
+// ============================================================
+let _idSeed = 1;
+function genId() { return Date.now().toString(36) + '_' + (_idSeed++).toString(36); }
 
-    // ==================== 初始化 ====================
-    function init() {
-        renderList();
-        runKeyCheck();
-        getCurrentLocation(true);
-        bindInput();
-    }
+function isValidCoord(lon, lat) {
+    const lo = parseFloat(lon);
+    const la = parseFloat(lat);
+    return !isNaN(lo) && !isNaN(la) && lo >= -180 && lo <= 180 && la >= -90 && la <= 90;
+}
 
-    // ==================== Key 自检 ====================
-    function runKeyCheck() {
-        const tipEl = document.getElementById('keyTip');
-        if (!AMAP_WEB_KEY) {
-            tipEl.style.display = 'block';
-            tipEl.innerHTML = '⚠️ <b>搜索不可用</b>：请在高德控制台「添加 Key → 服务平台选 <b>Web 服务</b>」，把生成的 Key 填到代码顶部 <code>AMAP_WEB_KEY</code>。<br>'
-                          + '你当前的 <code>bd1097f2…</code> 是「Web 端 JS API」Key，不能调搜索接口（restapi.amap.com）。<br>'
-                          + '👉 <a href="https://console.amap.com/" target="_blank" style="color:#007aff;">前往控制台新建</a> → 填好后再测。';
-            return;
-        }
-        fetch(`https://restapi.amap.com/v3/geocode/regeo?key=${AMAP_WEB_KEY}&location=116.397428,39.90923&extensions=base&output=json`)
-            .then(r => r.json())
-            .then(d => {
-                if (d.status === '1') { tipEl.style.display = 'none'; }
-                else if (d.infocode === '10001') {
-                    tipEl.style.display = 'block';
-                    tipEl.innerHTML = '⚠️ Key 无效/过期（INVALID_USER_KEY）。请确认 <code>AMAP_WEB_KEY</code> 是<b>「Web 服务」</b>类型且未过期。';
-                } else if (d.infocode === '10020' || d.info === 'USERKEY_PLAT_NOMATCH') {
-                    tipEl.style.display = 'block';
-                    tipEl.innerHTML = '⚠️ Key 类型不匹配：<code>AMAP_WEB_KEY</code> 必须是「<b>Web 服务</b>」Key，不能是 JS API / iOS / Android Key。';
-                } else {
-                    tipEl.style.display = 'block';
-                    tipEl.innerHTML = `⚠️ 接口返回：${d.info}（${d.infocode}）。请检查 Key 类型与权限。`;
-                }
-            })
-            .catch(() => {});
-    }
+function toast(msg) {
+    const t = document.createElement('div');
+    t.className = 'toast';
+    t.textContent = msg;
+    document.body.appendChild(t);
+    setTimeout(() => t.remove(), 1800);
+}
 
-    // ==================== Toast ====================
-    function showToast(msg) {
-        const t = document.getElementById('toast');
-        t.textContent = msg;
-        t.classList.add('active');
-        setTimeout(() => t.classList.remove('active'), 2000);
-    }
+// ============================================================
+// 状态
+// ============================================================
+const state = {
+    keyword: '',
+    addresses: [],       // {id, name, remark, lon, lat, _isCurrent}
+    currentPos: null,     // {lng, lat}
+    currentAddr: '',
+    currentCity: '',
+    currentDistrict: '',
+    suggestions: [],
+    timer: null,
+    editingId: null       // 当前正在编辑的地址id
+};
 
-    // ==================== 定位状态 ====================
-    function setLocStatus(state, text) {
-        const dot = document.getElementById('locDot');
-        const txt = document.getElementById('locText');
-        dot.className = 'location-dot ' + state;
-        txt.textContent = text;
-    }
+const $ = (id) => document.getElementById(id);
+const elLocDot = $('locDot');
+const elLocText = $('locText');
+const elKeyword = $('keyword');
+const elSuggestBox = $('suggestBox');
+const elListBox = $('listBox');
+const elEmptyBox = $('emptyBox');
+const elLocAction = $('locAction');
+const elKeyTip = $('keyTip');
+const elDiag = $('diagBox');
+const elEditModal = $('editModal');
+const elEditName = $('editName');
+const elEditRemark = $('editRemark');
 
-    // ==================== 功能①：自动定位（精确到街道） ====================
-    function getCurrentLocation(silent) {
-        setLocStatus('loading', silent ? '正在定位…' : '重新定位中…');
-        if (!navigator.geolocation) {
-            setLocStatus('fail', '浏览器不支持定位');
-            return;
-        }
-        navigator.geolocation.getCurrentPosition(
-            (pos) => onLocateSuccess(pos.coords.longitude, pos.coords.latitude),
-            (err) => {
-                console.warn('定位失败', err);
-                setLocStatus('fail', '定位失败，可点击刷新重试');
-                if (!silent) showToast('定位失败');
-            },
-            { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 }
-        );
-    }
+function setLoc(state_, text) {
+    elLocDot.className = 'location-dot ' + state_;
+    elLocText.textContent = text;
+}
 
-    // 定位成功 → 保存坐标 + 逆地理编码拿 市/区/街道 详细地址
-    function onLocateSuccess(lng, lat) {
-        currentPos = { lng, lat };
-        setLocStatus('ok', '当前位置：已获取');
-        reverseGeocode(lat, lng, (info) => {
-            if (info) {
-                currentCity = info.city;
-                currentDistrict = info.district;
-                currentAddr = info.full;
-                // 显示精确到街道的地址
-                setLocStatus('ok', `当前位置：${info.full}`);
-                // 定位更精细 → 重建搜索范围，后续搜索结果更准
-                document.getElementById('locAction').style.display = 'block';
-            }
-        });
-        showToast('定位成功');
-    }
-
-    // 逆地理编码：经纬度 → 市/区/街道（extensions=base 即可，省流量）
-    // 返回 { city, district, full }
-    function reverseGeocode(lat, lng, cb) {
-        if (!AMAP_WEB_KEY) { cb(null); return; }
-        const url = `https://restapi.amap.com/v3/geocode/regeo?key=${AMAP_WEB_KEY}&location=${lng},${lat}&radius=1000&extensions=base&output=json`;
-        fetch(url)
-            .then(r => r.json())
-            .then(data => {
-                if (data.status === '1' && data.regeocode) {
-                    const c = data.regeocode.addressComponent || {};
-                    const city = c.city || c.district || c.province || '';
-                    const district = c.district || '';
-                    const township = c.township || '';
-                    // 拼出"市·区·街道"；街道级可能为空（精度不够时）
-                    const parts = [city, district, township].filter(Boolean);
-                    cb({
-                        city,
-                        district,
-                        full: parts.join('·') || data.regeocode.formatted_address || city
-                    });
-                } else cb(null);
-            })
-            .catch(() => cb(null));
-    }
-
-    // ==================== 工具：直线距离计算（Haversine 公式） ====================
-    // 返回米数；足够精确，误差在 1% 以内
-    function calcDistance(lng1, lat1, lng2, lat2) {
-        const R = 6371000; // 地球平均半径（米）
-        const toRad = d => d * Math.PI / 180;
-        const dLat = toRad(lat2 - lat1);
-        const dLng = toRad(lng2 - lng1);
-        const a = Math.sin(dLat/2) * Math.sin(dLat/2)
-                + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2))
-                * Math.sin(dLng/2) * Math.sin(dLng/2);
-        return 2 * R * Math.asin(Math.sqrt(a));
-    }
-    function formatDist(m) {
-        if (m == null || isNaN(m)) return '';
-        if (m < 1000) return Math.round(m) + 'm';
-        return (m / 1000).toFixed(1) + 'km';
-    }
-
-    // ==================== 功能②：搜索下拉（带距离、按近到远排序） ====================
-    function bindInput() {
-        const input = document.getElementById('addressInput');
-        let timer = null;
-        input.addEventListener('input', function () {
-            const kw = this.value.trim();
-            if (!kw) { hideSuggestions(); return; }
-            clearTimeout(timer);
-            timer = setTimeout(() => doSearch(kw), 350);
-        });
-        input.addEventListener('blur', () => setTimeout(hideSuggestions, 200));
-        input.addEventListener('focus', () => {
-            if (input.value.trim()) doSearch(input.value.trim());
-        });
-    }
-
-    function doSearch(keyword) {
-        if (!AMAP_WEB_KEY) { renderKeyMissing(keyword); return; }
-
-        // 搜索中心 = 当前定位坐标；有定位时缩小到「区/县」级别，比全市更精准
-        const center = currentPos ? `${currentPos.lng},${currentPos.lat}` : '';
-        const city = currentDistrict ? encodeURIComponent(currentDistrict)
-                  : (currentCity ? encodeURIComponent(currentCity) : '全国');
-
-        let url = `https://restapi.amap.com/v3/place/text?key=${AMAP_WEB_KEY}&keywords=${encodeURIComponent(keyword)}&city=${city}&citylimit=false&offset=25&output=json`;
-        if (center) url += `&location=${center}&radius=50000`;
-
-        fetch(url)
-            .then(r => r.json())
-            .then(data => {
-                let pois = (data.status === '1' && data.pois) ? data.pois : [];
-                if (pois.length === 0 && center) {
-                    // 本区无结果 → 放宽到全国再搜
-                    return fetch(`https://restapi.amap.com/v3/place/text?key=${AMAP_WEB_KEY}&keywords=${encodeURIComponent(keyword)}&city=全国&offset=25&output=json`)
-                        .then(r => r.json())
-                        .then(d2 => { renderPois((d2.status === '1' && d2.pois) ? d2.pois : [], keyword); });
-                }
-                renderPois(pois, keyword);
-            })
-            .catch(err => {
-                console.error('搜索请求失败', err);
-                renderNetError(keyword);
+// ============================================================
+// 本地存储（带 id/remark 兼容）
+// ============================================================
+function load() {
+    try {
+        const saved = localStorage.getItem('navAddresses');
+        if (saved) {
+            state.addresses = JSON.parse(saved).map(a => { 
+                if (!a.id) a.id = genId();
+                if (a.remark === undefined) a.remark = ''; // 兼容旧数据
+                return a;
             });
-    }
-
-    // 给 POI 计算距离，并按由近到远排序
-    function attachDistance(pois) {
-        if (!currentPos) return pois;
-        return pois.map(p => {
-            const loc = p.location ? p.location.split(',') : [null, null];
-            const lon = parseFloat(loc[0]), lat = parseFloat(loc[1]);
-            const dist = (lon && lat) ? calcDistance(currentPos.lng, currentPos.lat, lon, lat) : null;
-            return Object.assign({}, p, { _dist: dist });
-        }).sort((a, b) => (a._dist == null ? 1e15 : a._dist) - (b._dist == null ? 1e15 : b._dist));
-    }
-
-    function renderPois(pois, keyword) {
-        const box = document.getElementById('suggestions');
-        if (!pois || pois.length === 0) { renderEmpty(keyword); return; }
-
-        const sorted = attachDistance(pois);
-        const reg = new RegExp(keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
-        box.innerHTML = sorted.map(p => {
-            const name = (p.name || '').replace(reg, m => `<em>${m}</em>`);
-            const addr = p.pname ? `${p.pname}${p.cityname ? '·'+p.cityname : ''}${p.adname ? '·'+p.adname : ''}` : (p.address || '');
-            const loc = p.location ? p.location.split(',') : [0, 0];
-            const distHtml = p._dist != null ? `<span class="suggestion-dist">${formatDist(p._dist)}</span>` : '';
-            return `<div class="suggestion-item" data-name="${escapeAttr(p.name)}" data-lon="${loc[0]}" data-lat="${loc[1]}">
-                <div class="suggestion-name">${name}${distHtml}</div>
-                <div class="suggestion-address">${addr}</div>
-            </div>`;
-        }).join('');
-        box.classList.add('active');
-
-        box.querySelectorAll('.suggestion-item').forEach(el => {
-            el.addEventListener('mousedown', e => { e.preventDefault(); pickSuggestion(el); });
-            el.addEventListener('touchstart', e => { e.preventDefault(); pickSuggestion(el); }, { passive: false });
-        });
-    }
-
-    function renderKeyMissing(keyword) {
-        const box = document.getElementById('suggestions');
-        box.innerHTML = `<div class="suggestion-empty" style="text-align:left;line-height:1.6;">
-            ⚠️ 搜索暂不可用<br>请新建一个「<b>Web 服务</b>」类型的 Key 填入代码顶部。<br>
-            <a href="https://console.amap.com/" target="_blank" style="color:#007aff;">前往控制台 → 添加 Key → 选 Web 服务</a></div>`;
-        box.classList.add('active');
-    }
-    function renderNetError(keyword) {
-        const box = document.getElementById('suggestions');
-        box.innerHTML = `<div class="suggestion-empty">网络异常，请检查后重试</div>`;
-        box.classList.add('active');
-    }
-    function renderEmpty(keyword) {
-        const box = document.getElementById('suggestions');
-        box.innerHTML = `<div class="suggestion-empty">无搜索结果，点「添加」将以「${escapeHtml(keyword)}」名称手动添加</div>`;
-        box.classList.add('active');
-    }
-    function hideSuggestions() {
-        document.getElementById('suggestions').classList.remove('active');
-    }
-
-    // 选中下拉项 → 添加
-    function pickSuggestion(el) {
-        const name = el.dataset.name;
-        const lon = parseFloat(el.dataset.lon);
-        const lat = parseFloat(el.dataset.lat);
-        if (!name || isNaN(lon)) { hideSuggestions(); return; }
-        addresses.push({ name, lon, lat });
-        saveAndRender();
-        document.getElementById('addressInput').value = '';
-        hideSuggestions();
-        showToast('已添加');
-    }
-
-    // ==================== 「当前位置」快捷添加 ====================
-    function addCurrentLocation() {
-        if (!currentPos) { showToast('暂未获取到当前位置'); return; }
-        // 避免重复添加
-        const exist = addresses.find(a => a._isCurrent);
-        if (exist) { showToast('当前位置已在列表中'); return; }
-        const name = currentAddr ? `📍 当前位置（${currentAddr}）` : '📍 当前位置';
-        addresses.unshift({ name, lon: currentPos.lng, lat: currentPos.lat, _isCurrent: true });
-        saveAndRender();
-        showToast('已添加当前位置');
-    }
-
-    // 手动添加（未选下拉时）
-    function manualAdd() {
-        const input = document.getElementById('addressInput');
-        const name = input.value.trim();
-        if (!name) { showToast('请输入地名'); return; }
-        if (currentPos) {
-            addresses.push({ name, lon: currentPos.lng, lat: currentPos.lat });
-            saveAndRender();
-            input.value = '';
-            hideSuggestions();
-            showToast('已添加（坐标为当前位置，建议从下拉选择更精确）');
-        } else {
-            showCoordModal(name);
         }
-    }
+    } catch (e) {}
+    render();
+}
+function save() {
+    localStorage.setItem('navAddresses', JSON.stringify(state.addresses));
+}
 
-    function showCoordModal(name) {
-        const coord = prompt('请输入经纬度（经度,纬度，如：109.73,38.28）', '');
+// ============================================================
+// Key 自检
+// ============================================================
+function runKeyCheck() {
+    if (!AMAP_WEB_KEY) {
+        elKeyTip.textContent = '⚠️ 搜索不可用：请填 AMAP_WEB_KEY（Web 服务 Key）。定位与导航不受影响。';
+        return;
+    }
+    fetch(`https://restapi.amap.com/v3/geocode/regeo?key=${AMAP_WEB_KEY}&location=116.397428,39.90923&extensions=base`)
+        .then(r => r.json()).then(d => {
+            if (d.status === '1') elKeyTip.textContent = '';
+            else if (d.infocode === '10001') elKeyTip.textContent = '⚠️ Key 无效/过期';
+            else if (d.infocode === '10020' || d.info === 'USERKEY_PLAT_NOMATCH') elKeyTip.textContent = '⚠️ Key 类型不匹配：必须是「Web 服务」Key';
+            else elKeyTip.textContent = `⚠️ ${d.info}（${d.infocode}）`;
+        }).catch(() => {});
+}
+
+// ============================================================
+// 定位
+// ============================================================
+function getCurrentLocation(silent) {
+    setLoc('loading', silent ? '正在定位…' : '重新定位中…');
+    const done = (lng, lat) => {
+        if (!isValidCoord(lng, lat)) { setLoc('fail', '定位坐标异常，可点击刷新重试'); return; }
+        state.currentPos = { lng, lat };
+        setLoc('ok', '当前位置：已获取');
+        reverseGeocode(lat, lng);
+        render();
+    };
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            (pos) => done(pos.coords.longitude, pos.coords.latitude),
+            (err) => { console.warn('HTML5 定位失败，尝试 IP 定位', err); ipLocate(); },
+            { enableHighAccuracy: true, timeout: 10000 }
+        );
+    } else { ipLocate(); }
+}
+function ipLocate() {
+    if (!AMAP_WEB_KEY) { setLoc('fail', '定位失败，可点击刷新重试'); return; }
+    fetch(`https://restapi.amap.com/v3/ip?key=${AMAP_WEB_KEY}`)
+        .then(r => r.json()).then(d => {
+            if (d.status === '1' && d.rectangle) {
+                const c = d.rectangle.split(';')[0].split(',');
+                const lng = parseFloat(c[0]), lat = parseFloat(c[1]);
+                if (isValidCoord(lng, lat)) {
+                    state.currentPos = { lng, lat };
+                    setLoc('ok', '当前位置：' + (d.city || '已获取'));
+                    reverseGeocode(lat, lng);
+                    render();
+                    return;
+                }
+            }
+            setLoc('fail', '定位失败，可点击刷新重试');
+        }).catch(() => setLoc('fail', '定位失败，可点击刷新重试'));
+}
+function reverseGeocode(lat, lng) {
+    if (!AMAP_WEB_KEY) return;
+    fetch(`https://restapi.amap.com/v3/geocode/regeo?key=${AMAP_WEB_KEY}&location=${lng},${lat}&radius=1000&extensions=base`)
+        .then(r => r.json()).then(d => {
+            if (d.status === '1' && d.regeocode) {
+                const c = d.regeocode.addressComponent || {};
+                const parts = [c.city || c.district || c.province, c.district, c.township].filter(Boolean);
+                state.currentCity = c.city || c.district || '';
+                state.currentDistrict = c.district || '';
+                state.currentAddr = parts.join('·') || d.regeocode.formatted_address || state.currentCity;
+                setLoc('ok', `当前位置：${state.currentAddr}`);
+                render();
+            }
+        }).catch(() => {});
+}
+
+// ============================================================
+// 搜索下拉
+// ============================================================
+function onInput() {
+    const kw = elKeyword.value.trim();
+    state.keyword = kw;
+    if (!kw) { elSuggestBox.innerHTML = ''; return; }
+    clearTimeout(state.timer);
+    state.timer = setTimeout(() => doSearch(kw), 350);
+}
+function doSearch(keyword) {
+    if (!AMAP_WEB_KEY) { renderSuggest([]); return; }
+    const center = state.currentPos ? `${state.currentPos.lng},${state.currentPos.lat}` : '';
+    const city = state.currentDistrict ? encodeURIComponent(state.currentDistrict)
+        : (state.currentCity ? encodeURIComponent(state.currentCity) : '全国');
+    let url = `https://restapi.amap.com/v3/place/text?key=${AMAP_WEB_KEY}&keywords=${encodeURIComponent(keyword)}&city=${city}&citylimit=false&offset=25`;
+    if (center) url += `&location=${center}&radius=50000`;
+    fetch(url).then(r => r.json()).then(d => {
+        let pois = (d.status === '1' && d.pois) ? d.pois : [];
+        if (!pois.length && center) {
+            return fetch(`https://restapi.amap.com/v3/place/text?key=${AMAP_WEB_KEY}&keywords=${encodeURIComponent(keyword)}&city=全国&offset=25`)
+                .then(r => r.json()).then(d2 => renderSuggest((d2.status === '1' && d2.pois) ? d2.pois : []));
+        }
+        renderSuggest(pois);
+    }).catch(() => renderSuggest([]));
+}
+function renderSuggest(pois) {
+    state.suggestions = pois.map(p => {
+        const loc = p.location ? p.location.split(',') : [null, null];
+        const lon = parseFloat(loc[0]), lat = parseFloat(loc[1]);
+        const dist = (isValidCoord(lon, lat) && state.currentPos) ? calcDistance(state.currentPos.lng, state.currentPos.lat, lon, lat) : null;
+        return Object.assign({}, p, { lon, lat, _dist: dist });
+    }).sort((a, b) => (a._dist == null ? 1e15 : a._dist) - (b._dist == null ? 1e15 : b._dist));
+    elSuggestBox.innerHTML = state.suggestions.slice(0, 15).map(p => {
+        const dist = (p._dist != null) ? `<span class="suggestion-dist">${formatDist(p._dist)}</span>` : '';
+        return `<div class="suggestion-item" data-name="${escapeAttr(p.name)}" data-lon="${p.lon}" data-lat="${p.lat}">
+            <div class="suggestion-name">${highlight(p.name)}${dist}</div>
+            <div class="suggestion-address">${p.adname || p.address || ''}</div>
+        </div>`;
+    }).join('');
+}
+function escapeAttr(s) { return String(s).replace(/"/g, '&quot;'); }
+function highlight(name) {
+    const kw = state.keyword.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    if (!kw) return escapeHtml(name);
+    return escapeHtml(name).replace(new RegExp(kw, 'gi'), m => `<span style="color:#007aff;font-weight:600">${m}</span>`);
+}
+function escapeHtml(s) { return String(s).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c])); }
+function formatDist(m) { if (m == null || isNaN(m)) return ''; return m < 1000 ? Math.round(m) + 'm' : (m / 1000).toFixed(1) + 'km'; }
+function calcDistance(lng1, lat1, lng2, lat2) {
+    const R = 6371000, toRad = d => d * Math.PI / 180;
+    const dLat = toRad(lat2 - lat1), dLng = toRad(lng2 - lng1);
+    const x = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+    return 2 * R * Math.asin(Math.sqrt(x));
+}
+
+// ============================================================
+// 添加 / 删除（全部带坐标校验 + 唯一 id）
+// ============================================================
+function pickSuggestion(el) {
+    const p = { name: el.dataset.name, lon: el.dataset.lon, lat: el.dataset.lat };
+    if (!p.name || !isValidCoord(p.lon, p.lat)) { toast('该地点缺少坐标，请换一个'); elSuggestBox.innerHTML = ''; return; }
+    state.addresses.push({ id: genId(), name: p.name, remark: '', lon: parseFloat(p.lon), lat: parseFloat(p.lat) });
+    save(); elKeyword.value = ''; elSuggestBox.innerHTML = ''; toast('已添加'); render();
+}
+
+function addCurrentLocation() {
+    if (!state.currentPos) { toast('暂未获取到当前位置'); return; }
+    if (!isValidCoord(state.currentPos.lng, state.currentPos.lat)) { toast('当前定位坐标无效'); return; }
+    if (state.addresses.find(a => a._isCurrent)) { toast('当前位置已在列表中'); return; }
+    const name = state.currentAddr ? `📍 当前位置（${state.currentAddr}）` : '📍 当前位置';
+    state.addresses.unshift({ id: genId(), name, remark: '', lon: state.currentPos.lng, lat: state.currentPos.lat, _isCurrent: true });
+    save(); toast('已添加当前位置'); render();
+}
+
+function manualAdd() {
+    const name = elKeyword.value.trim();
+    if (!name) { toast('请输入地名'); return; }
+    if (state.currentPos) {
+        if (!isValidCoord(state.currentPos.lng, state.currentPos.lat)) { toast('当前定位坐标无效'); return; }
+        state.addresses.push({ id: genId(), name, remark: '', lon: state.currentPos.lng, lat: state.currentPos.lat });
+        save(); elKeyword.value = ''; toast('已添加（坐标为当前位置）'); render();
+    } else {
+        const coord = prompt('未定位，请输入经纬度（经度,纬度，如 109.73,38.28）');
         if (!coord) return;
         const parts = coord.split(',').map(Number);
-        if (parts.length !== 2 || isNaN(parts[0]) || isNaN(parts[1])) { showToast('格式错误'); return; }
-        addresses.push({ name, lon: parts[0], lat: parts[1] });
-        saveAndRender();
-        document.getElementById('addressInput').value = '';
-        showToast('已添加');
+        if (parts.length !== 2 || !isValidCoord(parts[0], parts[1])) { toast('格式错误或坐标超范围'); return; }
+        state.addresses.push({ id: genId(), name, remark: '', lon: parts[0], lat: parts[1] });
+        save(); elKeyword.value = ''; render();
     }
+}
 
-    // ==================== 列表渲染（带距离、当前位置标记） ====================
-    function renderList() {
-        const container = document.getElementById('listContainer');
-        if (addresses.length === 0) {
-            container.innerHTML = '<div class="empty">暂无地址，添加后点击即可导航</div>';
-            return;
-        }
-        // 列表也按距离排序（当前位置不参与，排最前）
-        const sorted = sortAddresses(addresses);
-        container.innerHTML = '<div class="list-title">已添加地址（点击跳转导航）</div>' +
-            sorted.map((a, i) => {
-                const dist = (currentPos && !a._isCurrent)
-                    ? calcDistance(currentPos.lng, currentPos.lat, a.lon, a.lat) : null;
-                const distHtml = dist != null
-                    ? `<span class="addr-dist">· ${formatDist(dist)}</span>` : '';
-                const tag = a._isCurrent ? '<span class="addr-dist">当前位置</span>' : '';
-                return `
-                <div class="addr-card" onclick="jumpToNav(${i})">
-                    <div class="addr-icon">${a._isCurrent ? '🧭' : '📍'}</div>
-                    <div class="addr-info">
-                        <div class="addr-name">${escapeHtml(a.name)}</div>
-                        <div class="addr-coord">${a.lat.toFixed(4)}, ${a.lon.toFixed(4)}${distHtml}${tag}</div>
-                    </div>
-                    <div class="addr-delete" onclick="deleteAddr(event, ${i})">×</div>
-                </div>`;
-            }).join('');
-    }
+// 【关键修复】按 id 删除，而非排序后索引，彻底解决"删错/跳第一个"
+function deleteAddr(id) {
+    if (id == null) return;
+    const idx = state.addresses.findIndex(a => a.id === id);
+    if (idx > -1) { state.addresses.splice(idx, 1); save(); render(); }
+}
 
-    // 列表排序：当前位置置顶，其余按距离由近到远
-    function sortAddresses(list) {
-        return list.slice().sort((a, b) => {
-            if (a._isCurrent && !b._isCurrent) return -1;
-            if (!a._isCurrent && b._isCurrent) return 1;
-            if (!currentPos) return 0;
-            const da = calcDistance(currentPos.lng, currentPos.lat, a.lon, a.lat);
-            const db = calcDistance(currentPos.lng, currentPos.lat, b.lon, b.lat);
-            return da - db;
-        });
-    }
+// ============================================================
+// 编辑功能
+// ============================================================
+function openEdit(id) {
+    const addr = state.addresses.find(a => a.id === id);
+    if (!addr) return;
+    state.editingId = id;
+    elEditName.value = addr.name || '';
+    elEditRemark.value = addr.remark || '';
+    elEditModal.style.display = 'flex';
+    elEditName.focus();
+}
 
-    // 删除
-    function deleteAddr(e, i) {
-        e.stopPropagation();
-        addresses.splice(i, 1);
-        saveAndRender();
-        showToast('已删除');
-    }
+function closeEdit() {
+    state.editingId = null;
+    elEditModal.style.display = 'none';
+}
 
-    // ==================== 功能③：跳转高德地图导航 ====================
-    function jumpToNav(i) {
-        const a = addresses[i];
-        if (!a) return;
-        const slat = currentPos ? currentPos.lat : '';
-        const slon = currentPos ? currentPos.lng : '';
-        let amapUrl;
-        if (currentPos) {
-            amapUrl = `iosamap://path?sourceApplication=navApp&sid=current&slat=${slat}&slon=${slon}&sname=我的位置&did=目的地&dlat=${a.lat}&dlon=${a.lon}&dname=${encodeURIComponent(a.name)}&t=0`;
-        } else {
-            amapUrl = `iosamap://navi?sourceApplication=navApp&poiname=${encodeURIComponent(a.name)}&lat=${a.lat}&lon=${a.lon}&dev=0&style=2`;
-        }
-        window.location.href = amapUrl;
-        setTimeout(() => {
-            const webUrl = `https://uri.amap.com/navigation?to=${a.lon},${a.lat},${encodeURIComponent(a.name)}&mode=car&policy=1`;
-            window.open(webUrl, '_blank');
-        }, 1500);
+function saveEdit() {
+    const name = elEditName.value.trim();
+    if (!name) { toast('地址名称不能为空'); elEditName.focus(); return; }
+    const idx = state.addresses.findIndex(a => a.id === state.editingId);
+    if (idx > -1) {
+        state.addresses[idx].name = name;
+        state.addresses[idx].remark = elEditRemark.value.trim();
+        save();
+        render();
+        toast('修改成功');
+        closeEdit();
     }
+}
 
-    // ==================== 工具 ====================
-    function saveAndRender() {
-        localStorage.setItem('navAddresses', JSON.stringify(addresses));
-        renderList();
-    }
-    function escapeHtml(s) {
-        return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-    }
-    function escapeAttr(s) { return escapeHtml(s); }
+// ============================================================
+// 跳转高德导航（带坐标校验，杜绝"地址空白"）
+// ============================================================
+function jumpToNav(a) {
+    if (!a) return;
+    const lon = parseFloat(a.lon);
+    const lat = parseFloat(a.lat);
+    if (!isValidCoord(lon, lat)) { console.warn('坐标无效', a); toast('该地址坐标无效，请重新添加'); return; }
+    const name = (a.name && String(a.name).trim()) || '目的地';
 
-    // ==================== 启动 ====================
-    init();
+    // 优先 iosamap://（iOS App），带起点可实现完整路线
+    const slat = state.currentPos ? state.currentPos.lat : '';
+    const slon = state.currentPos ? state.currentPos.lng : '';
+    let scheme;
+    if (state.currentPos) {
+        scheme = `iosamap://path?sourceApplication=navapp&sid=current&slat=${slat}&slon=${slon}&sname=我的位置&dlat=${lat}&dlon=${lon}&dname=${encodeURIComponent(name)}&t=0`;
+    } else {
+        scheme = `iosamap://navi?sourceApplication=navapp&poiname=${encodeURIComponent(name)}&lat=${lat}&lon=${lon}&dev=0&style=2`;
+    }
+    const web = `https://uri.amap.com/navigation?to=${lon},${lat},${encodeURIComponent(name)}&mode=car&policy=1`;
+
+    // 诊断日志（便于手机上排查）
+    elDiag.textContent = `跳转: ${name}\n坐标: ${lat},${lon}\n${scheme}`;
+    console.log('跳转高德:', name, lat, lon, scheme);
+
+    // 尝试唤起 App
+    window.location.href = scheme;
+
+    // 1.5s 后若仍在页面，降级网页版
+    const t = Date.now();
+    setTimeout(() => {
+        if (Date.now() - t < 2000 && !document.hidden) window.open(web, '_blank');
+    }, 1500);
+}
+
+// ============================================================
+// 渲染列表（排序 + :key 用 id，新增备注显示）
+// ============================================================
+function sortedAddresses() {
+    return state.addresses.slice().sort((a, b) => {
+        if (a._isCurrent && !b._isCurrent) return -1;
+        if (!a._isCurrent && b._isCurrent) return 1;
+        if (!state.currentPos) return 0;
+        return calcDistance(state.currentPos.lng, state.currentPos.lat, a.lon, a.lat)
+             - calcDistance(state.currentPos.lng, state.currentPos.lat, b.lon, b.lat);
+    });
+}
+function render() {
+    elLocAction.style.display = state.currentAddr ? 'block' : 'none';
+    if (!state.addresses.length) { elListBox.innerHTML = ''; elEmptyBox.style.display = 'block'; return; }
+    elEmptyBox.style.display = 'none';
+    elListBox.innerHTML = `<div class="list-title">已添加地址（点击跳转导航）</div>` + sortedAddresses().map(a => {
+        const dist = (state.currentPos && !a._isCurrent) ? `<span class="addr-dist">· ${formatDist(calcDistance(state.currentPos.lng, state.currentPos.lat, a.lon, a.lat))}</span>` : '';
+        const cur = a._isCurrent ? '<span class="addr-dist">当前位置</span>' : '';
+        const remarkHtml = a.remark ? `<div class="addr-remark">${escapeHtml(a.remark)}</div>` : '';
+        return `<div class="addr-card" data-id="${a.id}">
+            <div class="addr-icon">${a._isCurrent ? '🧭' : '📍'}</div>
+            <div class="addr-info">
+                <div class="addr-name">${escapeHtml(a.name)}</div>
+                ${remarkHtml}
+                <div class="addr-coord">${a.lat.toFixed(4)}, ${a.lon.toFixed(4)}${dist}${cur}</div>
+            </div>
+            <div class="addr-actions">
+                <span class="addr-edit" data-edit="${a.id}">✏️</span>
+                <span class="addr-delete" data-del="${a.id}">×</span>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+// ============================================================
+// 事件绑定（事件委托，按 id 精确匹配，不受排序影响）
+// ============================================================
+elKeyword.addEventListener('input', onInput);
+elKeyword.addEventListener('focus', () => { if (elKeyword.value.trim()) doSearch(elKeyword.value.trim()); });
+elKeyword.addEventListener('blur', () => setTimeout(() => elSuggestBox.innerHTML = '', 200));
+elSuggestBox.addEventListener('mousedown', (e) => {
+    const item = e.target.closest('.suggestion-item');
+    if (item) { e.preventDefault(); pickSuggestion(item); }
+});
+$('addBtn').addEventListener('click', manualAdd);
+$('refreshBtn').addEventListener('click', () => getCurrentLocation(false));
+$('locAction').addEventListener('click', addCurrentLocation);
+
+// 列表点击：点编辑/删除不跳转，点卡片主体跳转
+elListBox.addEventListener('click', (e) => {
+    const editBtn = e.target.closest('.addr-edit');
+    const delBtn = e.target.closest('.addr-delete');
+    if (editBtn) { e.stopPropagation(); openEdit(editBtn.dataset.edit); return; }
+    if (delBtn) { e.stopPropagation(); deleteAddr(delBtn.dataset.del); return; }
+    const card = e.target.closest('.addr-card');
+    if (card) {
+        const id = card.dataset.id;
+        const addr = state.addresses.find(a => a.id === id);
+        jumpToNav(addr);
+    }
+});
+
+// 编辑弹窗事件
+$('editCancel').addEventListener('click', closeEdit);
+$('editSave').addEventListener('click', saveEdit);
+elEditModal.addEventListener('click', (e) => { if (e.target === elEditModal) closeEdit(); });
+elEditName.addEventListener('keydown', (e) => { if (e.key === 'Enter') elEditRemark.focus(); });
+elEditRemark.addEventListener('keydown', (e) => { if (e.key === 'Enter') saveEdit(); });
+
+// 启动
+load();
+runKeyCheck();
+getCurrentLocation(true);
 </script>
 </body>
 </html>
