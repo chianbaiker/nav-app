@@ -15,9 +15,10 @@
     .location-bar { display: flex; align-items: center; justify-content: space-between; font-size: 13px; color: #666; }
     .location-text { display: flex; align-items: center; gap: 6px; flex: 1; overflow: hidden; }
     .location-dot { width: 8px; height: 8px; border-radius: 50%; background: #ccc; flex-shrink: 0; }
-    .location-dot.loading { background: #f0ad4e; }
+    .location-dot.loading { background: #f0ad4e; animation: pulse 1.5s infinite; }
     .location-dot.ok { background: #34c759; }
     .location-dot.fail { background: #ff3b30; }
+    @keyframes pulse { 0%{opacity:1} 50%{opacity:0.4} 100%{opacity:1} }
     .location-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .refresh-btn { color: #007aff; font-size: 13px; padding: 4px 8px; flex-shrink: 0; cursor: pointer; }
     .add-section { background: #fff; padding: 12px; display: flex; gap: 8px; align-items: flex-start; position: sticky; top: 73px; z-index: 9; border-bottom: 1px solid #e5e5ea; }
@@ -42,7 +43,6 @@
     .addr-remark { font-size: 12px; color: #999; margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .addr-coord { font-size: 12px; color: #999; margin-top: 2px; display: flex; align-items: center; gap: 6px; }
     .addr-dist { color: #34c759; font-weight: 500; }
-    /* 编辑+删除按钮区域 */
     .addr-actions { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
     .addr-edit { color: #8e8e93; font-size: 18px; padding: 4px 8px; cursor: pointer; line-height: 1; }
     .addr-delete { color: #ff3b30; font-size: 20px; padding: 4px 8px; cursor: pointer; line-height: 1; }
@@ -123,7 +123,54 @@
 const AMAP_WEB_KEY = 'aafb549191e1ababd28f5327c82fc911';
 
 // ============================================================
-// 工具：唯一 id + 坐标校验（修复"地址空白"的核心）
+// 🔧 核心：WGS84（浏览器原始坐标）→ GCJ02（高德专用坐标）转换算法
+// 解决定位偏移几百米的根本问题
+// ============================================================
+const a = 6378245.0; // 长半轴
+const ee = 0.00669342162296594323; // 扁率
+const pi = Math.PI;
+const x_pi = pi * 3000.0 / 180.0;
+
+function transformLat(x, y) {
+    let ret = -100.0 + 2.0 * x + 3.0 * y + 0.2 * y * y + 0.1 * x * y + 0.2 * Math.sqrt(Math.abs(x));
+    ret += (20.0 * Math.sin(6.0 * x * pi) + 20.0 * Math.sin(2.0 * x * pi)) * 2.0 / 3.0;
+    ret += (20.0 * Math.sin(y * pi) + 40.0 * Math.sin(y / 3.0 * pi)) * 2.0 / 3.0;
+    ret += (160.0 * Math.sin(y / 12.0 * pi) + 320 * Math.sin(y * pi / 30.0)) * 2.0 / 3.0;
+    return ret;
+}
+
+function transformLon(x, y) {
+    let ret = 300.0 + x + 2.0 * y + 0.1 * x * x + 0.1 * x * y + 0.1 * Math.sqrt(Math.abs(x));
+    ret += (20.0 * Math.sin(6.0 * x * pi) + 20.0 * Math.sin(2.0 * x * pi)) * 2.0 / 3.0;
+    ret += (20.0 * Math.sin(x * pi) + 40.0 * Math.sin(x / 3.0 * pi)) * 2.0 / 3.0;
+    ret += (150.0 * Math.sin(x / 12.0 * pi) + 300.0 * Math.sin(x / 30.0 * pi)) * 2.0 / 3.0;
+    return ret;
+}
+
+// 判断是否在国内（只有国内坐标需要转换）
+function outOfChina(lat, lon) {
+    return lon < 72.004 || lon > 137.8347 || lat < 0.8293 || lat > 55.8271;
+}
+
+// WGS84转GCJ02（浏览器坐标→高德坐标）
+function wgs84ToGcj02(lon, lat) {
+    if (outOfChina(lat, lon)) return { lon, lat };
+    let dLat = transformLat(lon - 105.0, lat - 35.0);
+    let dLon = transformLon(lon - 105.0, lat - 35.0);
+    const radLat = lat / 180.0 * pi;
+    let magic = Math.sin(radLat);
+    magic = 1 - ee * magic * magic;
+    const sqrtMagic = Math.sqrt(magic);
+    dLat = (dLat * 180.0) / ((a * (1 - ee)) / (magic * sqrtMagic) * pi);
+    dLon = (dLon * 180.0) / (a / sqrtMagic * Math.cos(radLat) * pi);
+    return {
+        lon: lon + dLon,
+        lat: lat + dLat
+    };
+}
+
+// ============================================================
+// 工具：唯一 id + 坐标校验 + 精度格式化
 // ============================================================
 let _idSeed = 1;
 function genId() { return Date.now().toString(36) + '_' + (_idSeed++).toString(36); }
@@ -132,6 +179,11 @@ function isValidCoord(lon, lat) {
     const lo = parseFloat(lon);
     const la = parseFloat(lat);
     return !isNaN(lo) && !isNaN(la) && lo >= -180 && lo <= 180 && la >= -90 && la <= 90;
+}
+
+function formatAccuracy(accuracy) {
+    if (!accuracy || isNaN(accuracy)) return '';
+    return accuracy < 1000 ? `±${Math.round(accuracy)}米` : `±${(accuracy/1000).toFixed(1)}公里`;
 }
 
 function toast(msg) {
@@ -148,7 +200,8 @@ function toast(msg) {
 const state = {
     keyword: '',
     addresses: [],       // {id, name, remark, lon, lat, _isCurrent}
-    currentPos: null,     // {lng, lat}
+    currentPos: null,     // 转换后的GCJ02坐标 {lng, lat}
+    rawPos: null,         // 浏览器原始WGS84坐标 {lng, lat, accuracy}
     currentAddr: '',
     currentCity: '',
     currentDistrict: '',
@@ -185,7 +238,7 @@ function load() {
         if (saved) {
             state.addresses = JSON.parse(saved).map(a => { 
                 if (!a.id) a.id = genId();
-                if (a.remark === undefined) a.remark = ''; // 兼容旧数据
+                if (a.remark === undefined) a.remark = '';
                 return a;
             });
         }
@@ -214,25 +267,58 @@ function runKeyCheck() {
 }
 
 // ============================================================
-// 定位
+// 🔧 优化定位：高精度参数 + 精度过滤 + 坐标转换
 // ============================================================
 function getCurrentLocation(silent) {
     setLoc('loading', silent ? '正在定位…' : '重新定位中…');
-    const done = (lng, lat) => {
-        if (!isValidCoord(lng, lat)) { setLoc('fail', '定位坐标异常，可点击刷新重试'); return; }
-        state.currentPos = { lng, lat };
-        setLoc('ok', '当前位置：已获取');
-        reverseGeocode(lat, lng);
-        render();
-    };
+    
+    // 优先使用浏览器高精度定位
     if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
-            (pos) => done(pos.coords.longitude, pos.coords.latitude),
-            (err) => { console.warn('HTML5 定位失败，尝试 IP 定位', err); ipLocate(); },
-            { enableHighAccuracy: true, timeout: 10000 }
+            (pos) => {
+                const rawLng = pos.coords.longitude;
+                const rawLat = pos.coords.latitude;
+                const accuracy = pos.coords.accuracy; // 精度半径（米）
+                
+                // 🔴 精度过滤：只接受误差≤100米的结果
+                if (accuracy > 100) {
+                    setLoc('fail', `定位精度不足（${formatAccuracy(accuracy)}），请到开阔地带重试`);
+                    toast(`当前定位误差较大，建议刷新重试`);
+                    return;
+                }
+                
+                // 保存原始坐标和精度
+                state.rawPos = { lng: rawLng, lat: rawLat, accuracy };
+                // 转换为高德专用GCJ02坐标
+                const gcjPos = wgs84ToGcj02(rawLng, rawLat);
+                state.currentPos = { lng: gcjPos.lon, lat: gcjPos.lat };
+                
+                setLoc('ok', `当前位置：${formatAccuracy(accuracy)}`);
+                reverseGeocode(gcjPos.lat, gcjPos.lon, accuracy);
+                render();
+            },
+            (err) => {
+                console.warn('HTML5 高精度定位失败，尝试IP定位', err);
+                let errMsg = '定位失败';
+                if (err.code === 1) errMsg = '请允许浏览器获取定位权限';
+                if (err.code === 2) errMsg = '无法获取位置，请检查网络';
+                if (err.code === 3) errMsg = '定位超时，请刷新重试';
+                setLoc('fail', errMsg);
+                ipLocate(); // 降级到IP定位
+            },
+            // 🔴 优化定位参数
+            { 
+                enableHighAccuracy: true, // 强制开启GPS高精度
+                timeout: 15000,           // 超时时间15秒
+                maximumAge: 0             // 不使用缓存的旧位置
+            }
         );
-    } else { ipLocate(); }
+    } else {
+        ipLocate(); // 浏览器不支持定位，直接用IP定位
+    }
 }
+
+// IP定位（降级方案，精度较低）
 function ipLocate() {
     if (!AMAP_WEB_KEY) { setLoc('fail', '定位失败，可点击刷新重试'); return; }
     fetch(`https://restapi.amap.com/v3/ip?key=${AMAP_WEB_KEY}`)
@@ -242,8 +328,9 @@ function ipLocate() {
                 const lng = parseFloat(c[0]), lat = parseFloat(c[1]);
                 if (isValidCoord(lng, lat)) {
                     state.currentPos = { lng, lat };
-                    setLoc('ok', '当前位置：' + (d.city || '已获取'));
-                    reverseGeocode(lat, lng);
+                    state.rawPos = { lng, lat, accuracy: 1000 }; // IP定位精度默认1公里
+                    setLoc('ok', `当前位置：${d.city || '已获取'}（IP定位，精度较低）`);
+                    reverseGeocode(lat, lng, 1000);
                     render();
                     return;
                 }
@@ -251,7 +338,9 @@ function ipLocate() {
             setLoc('fail', '定位失败，可点击刷新重试');
         }).catch(() => setLoc('fail', '定位失败，可点击刷新重试'));
 }
-function reverseGeocode(lat, lng) {
+
+// 逆地理编码（获取街道地址）
+function reverseGeocode(lat, lng, accuracy) {
     if (!AMAP_WEB_KEY) return;
     fetch(`https://restapi.amap.com/v3/geocode/regeo?key=${AMAP_WEB_KEY}&location=${lng},${lat}&radius=1000&extensions=base`)
         .then(r => r.json()).then(d => {
@@ -261,7 +350,9 @@ function reverseGeocode(lat, lng) {
                 state.currentCity = c.city || c.district || '';
                 state.currentDistrict = c.district || '';
                 state.currentAddr = parts.join('·') || d.regeocode.formatted_address || state.currentCity;
-                setLoc('ok', `当前位置：${state.currentAddr}`);
+                // 显示地址+精度
+                const accText = formatAccuracy(accuracy);
+                setLoc('ok', `当前位置：${state.currentAddr}（${accText}）`);
                 render();
             }
         }).catch(() => {});
@@ -324,7 +415,7 @@ function calcDistance(lng1, lat1, lng2, lat2) {
 }
 
 // ============================================================
-// 添加 / 删除（全部带坐标校验 + 唯一 id）
+// 添加 / 删除（带精度校验）
 // ============================================================
 function pickSuggestion(el) {
     const p = { name: el.dataset.name, lon: el.dataset.lon, lat: el.dataset.lat };
@@ -333,13 +424,27 @@ function pickSuggestion(el) {
     save(); elKeyword.value = ''; elSuggestBox.innerHTML = ''; toast('已添加'); render();
 }
 
+// 🔧 添加当前位置：只有高精度定位才允许添加
 function addCurrentLocation() {
     if (!state.currentPos) { toast('暂未获取到当前位置'); return; }
     if (!isValidCoord(state.currentPos.lng, state.currentPos.lat)) { toast('当前定位坐标无效'); return; }
+    // 检查定位精度，低精度不允许添加
+    if (state.rawPos && state.rawPos.accuracy > 100) {
+        toast(`当前定位精度不足（${formatAccuracy(state.rawPos.accuracy)}），请刷新后重试`);
+        return;
+    }
     if (state.addresses.find(a => a._isCurrent)) { toast('当前位置已在列表中'); return; }
     const name = state.currentAddr ? `📍 当前位置（${state.currentAddr}）` : '📍 当前位置';
-    state.addresses.unshift({ id: genId(), name, remark: '', lon: state.currentPos.lng, lat: state.currentPos.lat, _isCurrent: true });
-    save(); toast('已添加当前位置'); render();
+    // 存的是转换后的高德GCJ02坐标，避免偏移
+    state.addresses.unshift({ 
+        id: genId(), 
+        name, 
+        remark: `精度${formatAccuracy(state.rawPos?.accuracy)}`, 
+        lon: state.currentPos.lng, 
+        lat: state.currentPos.lat, 
+        _isCurrent: true 
+    });
+    save(); toast('已添加当前位置（高精度）'); render();
 }
 
 function manualAdd() {
@@ -359,7 +464,6 @@ function manualAdd() {
     }
 }
 
-// 【关键修复】按 id 删除，而非排序后索引，彻底解决"删错/跳第一个"
 function deleteAddr(id) {
     if (id == null) return;
     const idx = state.addresses.findIndex(a => a.id === id);
@@ -374,139 +478,4 @@ function openEdit(id) {
     if (!addr) return;
     state.editingId = id;
     elEditName.value = addr.name || '';
-    elEditRemark.value = addr.remark || '';
-    elEditModal.style.display = 'flex';
-    elEditName.focus();
-}
-
-function closeEdit() {
-    state.editingId = null;
-    elEditModal.style.display = 'none';
-}
-
-function saveEdit() {
-    const name = elEditName.value.trim();
-    if (!name) { toast('地址名称不能为空'); elEditName.focus(); return; }
-    const idx = state.addresses.findIndex(a => a.id === state.editingId);
-    if (idx > -1) {
-        state.addresses[idx].name = name;
-        state.addresses[idx].remark = elEditRemark.value.trim();
-        save();
-        render();
-        toast('修改成功');
-        closeEdit();
-    }
-}
-
-// ============================================================
-// 跳转高德导航（带坐标校验，杜绝"地址空白"）
-// ============================================================
-function jumpToNav(a) {
-    if (!a) return;
-    const lon = parseFloat(a.lon);
-    const lat = parseFloat(a.lat);
-    if (!isValidCoord(lon, lat)) { console.warn('坐标无效', a); toast('该地址坐标无效，请重新添加'); return; }
-    const name = (a.name && String(a.name).trim()) || '目的地';
-
-    // 优先 iosamap://（iOS App），带起点可实现完整路线
-    const slat = state.currentPos ? state.currentPos.lat : '';
-    const slon = state.currentPos ? state.currentPos.lng : '';
-    let scheme;
-    if (state.currentPos) {
-        scheme = `iosamap://path?sourceApplication=navapp&sid=current&slat=${slat}&slon=${slon}&sname=我的位置&dlat=${lat}&dlon=${lon}&dname=${encodeURIComponent(name)}&t=0`;
-    } else {
-        scheme = `iosamap://navi?sourceApplication=navapp&poiname=${encodeURIComponent(name)}&lat=${lat}&lon=${lon}&dev=0&style=2`;
-    }
-    const web = `https://uri.amap.com/navigation?to=${lon},${lat},${encodeURIComponent(name)}&mode=car&policy=1`;
-
-    // 诊断日志（便于手机上排查）
-    elDiag.textContent = `跳转: ${name}\n坐标: ${lat},${lon}\n${scheme}`;
-    console.log('跳转高德:', name, lat, lon, scheme);
-
-    // 尝试唤起 App
-    window.location.href = scheme;
-
-    // 1.5s 后若仍在页面，降级网页版
-    const t = Date.now();
-    setTimeout(() => {
-        if (Date.now() - t < 2000 && !document.hidden) window.open(web, '_blank');
-    }, 1500);
-}
-
-// ============================================================
-// 渲染列表（排序 + :key 用 id，新增备注显示）
-// ============================================================
-function sortedAddresses() {
-    return state.addresses.slice().sort((a, b) => {
-        if (a._isCurrent && !b._isCurrent) return -1;
-        if (!a._isCurrent && b._isCurrent) return 1;
-        if (!state.currentPos) return 0;
-        return calcDistance(state.currentPos.lng, state.currentPos.lat, a.lon, a.lat)
-             - calcDistance(state.currentPos.lng, state.currentPos.lat, b.lon, b.lat);
-    });
-}
-function render() {
-    elLocAction.style.display = state.currentAddr ? 'block' : 'none';
-    if (!state.addresses.length) { elListBox.innerHTML = ''; elEmptyBox.style.display = 'block'; return; }
-    elEmptyBox.style.display = 'none';
-    elListBox.innerHTML = `<div class="list-title">已添加地址（点击跳转导航）</div>` + sortedAddresses().map(a => {
-        const dist = (state.currentPos && !a._isCurrent) ? `<span class="addr-dist">· ${formatDist(calcDistance(state.currentPos.lng, state.currentPos.lat, a.lon, a.lat))}</span>` : '';
-        const cur = a._isCurrent ? '<span class="addr-dist">当前位置</span>' : '';
-        const remarkHtml = a.remark ? `<div class="addr-remark">${escapeHtml(a.remark)}</div>` : '';
-        return `<div class="addr-card" data-id="${a.id}">
-            <div class="addr-icon">${a._isCurrent ? '🧭' : '📍'}</div>
-            <div class="addr-info">
-                <div class="addr-name">${escapeHtml(a.name)}</div>
-                ${remarkHtml}
-                <div class="addr-coord">${a.lat.toFixed(4)}, ${a.lon.toFixed(4)}${dist}${cur}</div>
-            </div>
-            <div class="addr-actions">
-                <span class="addr-edit" data-edit="${a.id}">✏️</span>
-                <span class="addr-delete" data-del="${a.id}">×</span>
-            </div>
-        </div>`;
-    }).join('');
-}
-
-// ============================================================
-// 事件绑定（事件委托，按 id 精确匹配，不受排序影响）
-// ============================================================
-elKeyword.addEventListener('input', onInput);
-elKeyword.addEventListener('focus', () => { if (elKeyword.value.trim()) doSearch(elKeyword.value.trim()); });
-elKeyword.addEventListener('blur', () => setTimeout(() => elSuggestBox.innerHTML = '', 200));
-elSuggestBox.addEventListener('mousedown', (e) => {
-    const item = e.target.closest('.suggestion-item');
-    if (item) { e.preventDefault(); pickSuggestion(item); }
-});
-$('addBtn').addEventListener('click', manualAdd);
-$('refreshBtn').addEventListener('click', () => getCurrentLocation(false));
-$('locAction').addEventListener('click', addCurrentLocation);
-
-// 列表点击：点编辑/删除不跳转，点卡片主体跳转
-elListBox.addEventListener('click', (e) => {
-    const editBtn = e.target.closest('.addr-edit');
-    const delBtn = e.target.closest('.addr-delete');
-    if (editBtn) { e.stopPropagation(); openEdit(editBtn.dataset.edit); return; }
-    if (delBtn) { e.stopPropagation(); deleteAddr(delBtn.dataset.del); return; }
-    const card = e.target.closest('.addr-card');
-    if (card) {
-        const id = card.dataset.id;
-        const addr = state.addresses.find(a => a.id === id);
-        jumpToNav(addr);
-    }
-});
-
-// 编辑弹窗事件
-$('editCancel').addEventListener('click', closeEdit);
-$('editSave').addEventListener('click', saveEdit);
-elEditModal.addEventListener('click', (e) => { if (e.target === elEditModal) closeEdit(); });
-elEditName.addEventListener('keydown', (e) => { if (e.key === 'Enter') elEditRemark.focus(); });
-elEditRemark.addEventListener('keydown', (e) => { if (e.key === 'Enter') saveEdit(); });
-
-// 启动
-load();
-runKeyCheck();
-getCurrentLocation(true);
-</script>
-</body>
-</html>
+    elEditRemark.value = addr
