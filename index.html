@@ -15,10 +15,9 @@
     .location-bar { display: flex; align-items: center; justify-content: space-between; font-size: 13px; color: #666; }
     .location-text { display: flex; align-items: center; gap: 6px; flex: 1; overflow: hidden; }
     .location-dot { width: 8px; height: 8px; border-radius: 50%; background: #ccc; flex-shrink: 0; }
-    .location-dot.loading { background: #f0ad4e; animation: pulse 1.5s infinite; }
+    .location-dot.loading { background: #f0ad4e; }
     .location-dot.ok { background: #34c759; }
     .location-dot.fail { background: #ff3b30; }
-    @keyframes pulse { 0%{opacity:1} 50%{opacity:0.4} 100%{opacity:1} }
     .location-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .refresh-btn { color: #007aff; font-size: 13px; padding: 4px 8px; flex-shrink: 0; cursor: pointer; }
     .add-section { background: #fff; padding: 12px; display: flex; gap: 8px; align-items: flex-start; position: sticky; top: 73px; z-index: 9; border-bottom: 1px solid #e5e5ea; }
@@ -40,29 +39,35 @@
     .addr-icon { width: 40px; height: 40px; border-radius: 8px; background: #e8f0fe; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
     .addr-info { flex: 1; overflow: hidden; }
     .addr-name { font-size: 16px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .addr-remark { font-size: 12px; color: #999; margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .addr-coord { font-size: 12px; color: #999; margin-top: 2px; display: flex; align-items: center; gap: 6px; }
     .addr-dist { color: #34c759; font-weight: 500; }
-    .addr-actions { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
-    .addr-edit { color: #8e8e93; font-size: 18px; padding: 4px 8px; cursor: pointer; line-height: 1; }
-    .addr-delete { color: #ff3b30; font-size: 20px; padding: 4px 8px; cursor: pointer; line-height: 1; }
+    .addr-delete { color: #ff3b30; font-size: 20px; padding: 4px 8px; flex-shrink: 0; line-height: 1; cursor: pointer; }
+    .addr-edit { color: #007aff; padding: 4px 8px; flex-shrink: 0; cursor: pointer; flex-direction: column; align-items: flex-end; justify-content: center; gap: 2px; }
+    .addr-edit svg { width: 18px; height: 18px; }
+    .addr-name-input { font-size: 16px; font-weight: 500; border: 1px solid #007aff; border-radius: 6px; padding: 4px 8px; width: 100%; outline: none; box-sizing: border-box; background: #fff; }
+    .addr-remark { font-size: 12px; color: #666; margin-top: 3px; padding: 2px 0; word-break: break-all; }
+    .addr-remark.empty { color: #c7c7cc; font-style: normal; }
+    .edit-actions { display: flex; gap: 6px; margin-top: 6px; }
+    .edit-actions button { flex: 1; padding: 8px; border: none; border-radius: 8px; font-size: 14px; cursor: pointer; }
+    .edit-actions .btn-save { background: #007aff; color: #fff; font-weight: 500; }
+    .edit-actions .btn-cancel { background: #f2f2f7; color: #333; }
+    .edit-actions .btn-remark { background: #e8f0fe; color: #007aff; }
+    .modal-mask { position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 50; display: flex; align-items: center; justify-content: center; padding: 24px; }
+    .modal { background: #fff; border-radius: 14px; padding: 18px; width: 100%; max-width: 340px; box-shadow: 0 8px 30px rgba(0,0,0,.2); }
+    .modal-title { font-size: 17px; font-weight: 600; text-align: center; margin-bottom: 14px; }
+    .modal-label { font-size: 13px; color: #666; margin: 10px 0 6px; }
+    .modal input, .modal textarea { width: 100%; padding: 10px; border: 1px solid #d1d1d6; border-radius: 10px; font-size: 15px; outline: none; box-sizing: border-box; font-family: inherit; }
+    .modal textarea { min-height: 72px; resize: vertical; }
+    .modal input:focus, .modal textarea:focus { border-color: #007aff; }
+    .modal-actions { display: flex; gap: 10px; margin-top: 16px; }
+    .modal-actions button { flex: 1; padding: 11px; border: none; border-radius: 10px; font-size: 15px; font-weight: 500; cursor: pointer; }
+    .modal-actions .btn-confirm { background: #007aff; color: #fff; }
+    .modal-actions .btn-cancel { background: #f2f2f7; color: #333; }
     .empty { text-align: center; color: #999; padding: 60px 20px; }
     .footer-tip { text-align: center; font-size: 12px; color: #999; margin-top: 20px; padding: 0 20px; }
     .key-tip { margin: 12px; padding: 12px 14px; background: #fff4e5; border: 1px solid #ffd591; border-radius: 10px; font-size: 13px; color: #8a6d3b; line-height: 1.7; }
     .toast { position: fixed; left: 50%; top: 50%; transform: translate(-50%,-50%); background: rgba(0,0,0,.75); color: #fff; padding: 10px 20px; border-radius: 8px; font-size: 14px; z-index: 100; white-space: nowrap; }
     .diag { margin: 12px; padding: 10px 12px; background: #eef; border: 1px solid #ccd; border-radius: 10px; font-size: 12px; color: #335; white-space: pre-wrap; }
-
-    .modal-mask { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,.4); z-index: 200; display: flex; align-items: center; justify-content: center; padding: 20px; }
-    .modal-box { background: #fff; border-radius: 14px; width: 100%; max-width: 400px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,.2); }
-    .modal-title { font-size: 17px; font-weight: 600; text-align: center; margin-bottom: 20px; }
-    .modal-input-group { margin-bottom: 16px; }
-    .modal-label { font-size: 14px; color: #666; margin-bottom: 6px; display: block; }
-    .modal-input { width: 100%; padding: 12px; border: 1px solid #d1d1d6; border-radius: 10px; font-size: 15px; outline: none; box-sizing: border-box; }
-    .modal-input:focus { border-color: #007aff; }
-    .modal-actions { display: flex; gap: 12px; margin-top: 24px; }
-    .modal-btn { flex: 1; padding: 12px; border-radius: 10px; font-size: 16px; font-weight: 500; cursor: pointer; border: none; }
-    .modal-btn-cancel { background: #f2f2f7; color: #333; }
-    .modal-btn-save { background: #007aff; color: #fff; }
 </style>
 </head>
 <body>
@@ -86,29 +91,25 @@
         <button class="btn-add" id="addBtn">添加</button>
     </div>
 
-    <button class="loc-action" id="locAction" style="display:none">➕ 将「当前位置」加入导航列表</button>
+    <button class="loc-action" id="locAction" style="display:none">➕ 记录「当前位置」(搜不到地址时用它）</button>
 
     <div class="list" id="listBox"></div>
     <div class="empty" id="emptyBox">暂无地址，添加后点击即可导航</div>
 
-    <div class="footer-tip">点击地址卡片可直接跳转高德地图导航 🗺️</div>
+    <div class="footer-tip">点击地址卡片可直接跳转高德地图导航 </div>
     <div class="key-tip" id="keyTip"></div>
     <div class="diag" id="diagBox"></div>
 
-    <div class="modal-mask" id="editModal" style="display:none;">
-        <div class="modal-box">
+    <div class="modal-mask" id="editModal" style="display:none">
+        <div class="modal" onclick="event.stopPropagation()">
             <div class="modal-title">编辑地址</div>
-            <div class="modal-input-group">
-                <label class="modal-label">地址名称 *</label>
-                <input class="modal-input" id="editName" placeholder="请输入地址名称，如：接娃奶茶">
-            </div>
-            <div class="modal-input-group">
-                <label class="modal-label">备注（可选）</label>
-                <input class="modal-input" id="editRemark" placeholder="如：B1层停车场、走西门最近">
-            </div>
+            <div class="modal-label">名称（可改为简短别名）</div>
+            <input type="text" id="editName" placeholder="如：公司、接娃、常去超市" maxlength="40">
+            <div class="modal-label">备注（选填）</div>
+            <textarea id="editRemark" placeholder="如：B1层停车场、走西门最近、张经理 138xxxx"></textarea>
             <div class="modal-actions">
-                <button class="modal-btn modal-btn-cancel" id="editCancel">取消</button>
-                <button class="modal-btn modal-btn-save" id="editSave">保存</button>
+                <button class="btn-cancel" onclick="closeEdit()">取消</button>
+                <button class="btn-confirm" onclick="saveEdit()">保存</button>
             </div>
         </div>
     </div>
@@ -116,47 +117,6 @@
 
 <script>
 const AMAP_WEB_KEY = 'aafb549191e1ababd28f5327c82fc911';
-
-const a = 6378245.0; 
-const ee = 0.00669342162296594323; 
-const pi = Math.PI;
-const x_pi = pi * 3000.0 / 180.0;
-
-function transformLat(x, y) {
-    let ret = -100.0 + 2.0 * x + 3.0 * y + 0.2 * y * y + 0.1 * x * y + 0.2 * Math.sqrt(Math.abs(x));
-    ret += (20.0 * Math.sin(6.0 * x * pi) + 20.0 * Math.sin(2.0 * x * pi)) * 2.0 / 3.0;
-    ret += (20.0 * Math.sin(y * pi) + 40.0 * Math.sin(y / 3.0 * pi)) * 2.0 / 3.0;
-    ret += (160.0 * Math.sin(y / 12.0 * pi) + 320 * Math.sin(y * pi / 30.0)) * 2.0 / 3.0;
-    return ret;
-}
-
-function transformLon(x, y) {
-    let ret = 300.0 + x + 2.0 * y + 0.1 * x * x + 0.1 * x * y + 0.1 * Math.sqrt(Math.abs(x));
-    ret += (20.0 * Math.sin(6.0 * x * pi) + 20.0 * Math.sin(2.0 * x * pi)) * 2.0 / 3.0;
-    ret += (20.0 * Math.sin(x * pi) + 40.0 * Math.sin(x / 3.0 * pi)) * 2.0 / 3.0;
-    ret += (150.0 * Math.sin(x / 12.0 * pi) + 300.0 * Math.sin(x / 30.0 * pi)) * 2.0 / 3.0;
-    return ret;
-}
-
-function outOfChina(lat, lon) {
-    return lon < 72.004 || lon > 137.8347 || lat < 0.8293 || lat > 55.8271;
-}
-
-function wgs84ToGcj02(lon, lat) {
-    if (outOfChina(lat, lon)) return { lon, lat };
-    let dLat = transformLat(lon - 105.0, lat - 35.0);
-    let dLon = transformLon(lon - 105.0, lat - 35.0);
-    const radLat = lat / 180.0 * pi;
-    let magic = Math.sin(radLat);
-    magic = 1 - ee * magic * magic;
-    const sqrtMagic = Math.sqrt(magic);
-    dLat = (dLat * 180.0) / ((a * (1 - ee)) / (magic * sqrtMagic) * pi);
-    dLon = (dLon * 180.0) / (a / sqrtMagic * Math.cos(radLat) * pi);
-    return {
-        lon: lon + dLon,
-        lat: lat + dLat
-    };
-}
 
 let _idSeed = 1;
 function genId() { return Date.now().toString(36) + '_' + (_idSeed++).toString(36); }
@@ -169,7 +129,33 @@ function isValidCoord(lon, lat) {
 
 function formatAccuracy(accuracy) {
     if (!accuracy || isNaN(accuracy)) return '';
-    return accuracy < 1000 ? `±${Math.round(accuracy)}米` : `±${(accuracy/1000).toFixed(1)}公里`;
+    return accuracy < 1000 ? `±${Math.round(accuracy)}米` : `±${(accuracy / 1000).toFixed(1)}公里`;
+}
+
+const A = 6378245.0, EE = 0.00669342162296594323, PI = Math.PI, X_PI = PI * 3000.0 / 180.0;
+function transformLat(x, y) {
+    let r = -100.0 + 2.0 * x + 3.0 * y + 0.2 * y * y + 0.1 * x * y + 0.2 * Math.sqrt(Math.abs(x));
+    r += (20.0 * Math.sin(6.0 * x * PI) + 20.0 * Math.sin(2.0 * x * PI)) * 2.0 / 3.0;
+    r += (20.0 * Math.sin(y * PI) + 40.0 * Math.sin(y / 3.0 * PI)) * 2.0 / 3.0;
+    r += (160.0 * Math.sin(y / 12.0 * PI) + 320 * Math.sin(y * PI / 30.0)) * 2.0 / 3.0;
+    return r;
+}
+function transformLon(x, y) {
+    let r = 300.0 + x + 2.0 * y + 0.1 * x * x + 0.1 * x * y + 0.1 * Math.sqrt(Math.abs(x));
+    r += (20.0 * Math.sin(6.0 * x * PI) + 20.0 * Math.sin(2.0 * x * PI)) * 2.0 / 3.0;
+    r += (20.0 * Math.sin(x * PI) + 40.0 * Math.sin(x / 3.0 * PI)) * 2.0 / 3.0;
+    r += (150.0 * Math.sin(x / 12.0 * PI) + 300.0 * Math.sin(x / 30.0 * PI)) * 2.0 / 3.0;
+    return r;
+}
+function wgs84ToGcj02(lon, lat) {
+    if (lon < 72.004 || lon > 137.8347 || lat < 0.8293 || lat > 55.8271) return { lon, lat };
+    let dLat = transformLat(lon - 105.0, lat - 35.0);
+    let dLon = transformLon(lon - 105.0, lat - 35.0);
+    const radLat = lat / 180.0 * PI, magic = 1 - EE * Math.sin(radLat) * Math.sin(radLat);
+    const sqrtMagic = Math.sqrt(magic);
+    dLat = (dLat * 180.0) / ((A * (1 - EE)) / (magic * sqrtMagic) * PI);
+    dLon = (dLon * 180.0) / (A / sqrtMagic * Math.cos(radLat) * PI);
+    return { lon: lon + dLon, lat: lat + dLat };
 }
 
 function toast(msg) {
@@ -190,7 +176,6 @@ const state = {
     currentDistrict: '',
     suggestions: [],
     timer: null,
-    editingId: null      
 };
 
 const $ = (id) => document.getElementById(id);
@@ -203,9 +188,6 @@ const elEmptyBox = $('emptyBox');
 const elLocAction = $('locAction');
 const elKeyTip = $('keyTip');
 const elDiag = $('diagBox');
-const elEditModal = $('editModal');
-const elEditName = $('editName');
-const elEditRemark = $('editRemark');
 
 function setLoc(state_, text) {
     elLocDot.className = 'location-dot ' + state_;
@@ -216,11 +198,7 @@ function load() {
     try {
         const saved = localStorage.getItem('navAddresses');
         if (saved) {
-            state.addresses = JSON.parse(saved).map(a => { 
-                if (!a.id) a.id = genId();
-                if (a.remark === undefined) a.remark = '';
-                return a;
-            });
+            state.addresses = JSON.parse(saved).map(a => { if (!a.id) a.id = genId(); if (!('remark' in a)) a.remark = ''; return a; });
         }
     } catch (e) {}
     render();
@@ -245,52 +223,28 @@ function runKeyCheck() {
 
 function getCurrentLocation(silent) {
     setLoc('loading', silent ? '正在定位…' : '重新定位中…');
-    
+    const done = (lng, lat, accuracy) => {
+        if (!isValidCoord(lng, lat)) { setLoc('fail', '定位坐标异常，可点击刷新重试'); return; }
+        const gcj = wgs84ToGcj02(lng, lat); 
+        state.currentPos = { lng: gcj.lon, lat: gcj.lat };
+        state.rawPos = { accuracy: accuracy || null };
+        setLoc('ok', '当前位置：已获取');
+        reverseGeocode(gcj.lat, gcj.lon);
+        render();
+    };
     if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
-            (pos) => {
-                const rawLng = pos.coords.longitude;
-                const rawLat = pos.coords.latitude;
-                const accuracy = pos.coords.accuracy; 
-                
-             
-                if (accuracy > 100) {
-                    setLoc('fail', `定位精度不足（${formatAccuracy(accuracy)}），请到开阔地带重试`);
-                    toast(`当前定位误差较大，建议刷新重试`);
-                    return;
-                }
-                
-                
-                state.rawPos = { lng: rawLng, lat: rawLat, accuracy };
-               
-                const gcjPos = wgs84ToGcj02(rawLng, rawLat);
-                state.currentPos = { lng: gcjPos.lon, lat: gcjPos.lat };
-                
-                setLoc('ok', `当前位置：${formatAccuracy(accuracy)}`);
-                reverseGeocode(gcjPos.lat, gcjPos.lon, accuracy);
-                render();
-            },
+            (pos) => done(pos.coords.longitude, pos.coords.latitude, pos.coords.accuracy),
             (err) => {
-                console.warn('HTML5 高精度定位失败，尝试IP定位', err);
-                let errMsg = '定位失败';
-                if (err.code === 1) errMsg = '请允许浏览器获取定位权限';
-                if (err.code === 2) errMsg = '无法获取位置，请检查网络';
-                if (err.code === 3) errMsg = '定位超时，请刷新重试';
-                setLoc('fail', errMsg);
-                ipLocate(); 
+                console.warn('HTML5 定位失败，尝试 IP 定位', err);
+                ipLocate();
             },
-            
-            { 
-                enableHighAccuracy: true, 
-                timeout: 15000,           
-                maximumAge: 0             
-            }
+            { enableHighAccuracy: true, timeout: 10000 }
         );
     } else {
-        ipLocate(); 
+        ipLocate();
     }
 }
-
 function ipLocate() {
     if (!AMAP_WEB_KEY) { setLoc('fail', '定位失败，可点击刷新重试'); return; }
     fetch(`https://restapi.amap.com/v3/ip?key=${AMAP_WEB_KEY}`)
@@ -300,9 +254,9 @@ function ipLocate() {
                 const lng = parseFloat(c[0]), lat = parseFloat(c[1]);
                 if (isValidCoord(lng, lat)) {
                     state.currentPos = { lng, lat };
-                    state.rawPos = { lng, lat, accuracy: 1000 }; 
-                    setLoc('ok', `当前位置：${d.city || '已获取'}（IP定位，精度较低）`);
-                    reverseGeocode(lat, lng, 1000);
+                    state.rawPos = { accuracy: 1000 }; 
+                    setLoc('ok', '当前位置：' + (d.city || '已获取'));
+                    reverseGeocode(lat, lng);
                     render();
                     return;
                 }
@@ -310,8 +264,7 @@ function ipLocate() {
             setLoc('fail', '定位失败，可点击刷新重试');
         }).catch(() => setLoc('fail', '定位失败，可点击刷新重试'));
 }
-
-function reverseGeocode(lat, lng, accuracy) {
+function reverseGeocode(lat, lng) {
     if (!AMAP_WEB_KEY) return;
     fetch(`https://restapi.amap.com/v3/geocode/regeo?key=${AMAP_WEB_KEY}&location=${lng},${lat}&radius=1000&extensions=base`)
         .then(r => r.json()).then(d => {
@@ -321,14 +274,11 @@ function reverseGeocode(lat, lng, accuracy) {
                 state.currentCity = c.city || c.district || '';
                 state.currentDistrict = c.district || '';
                 state.currentAddr = parts.join('·') || d.regeocode.formatted_address || state.currentCity;
-                
-                const accText = formatAccuracy(accuracy);
-                setLoc('ok', `当前位置：${state.currentAddr}（${accText}）`);
+                setLoc('ok', `当前位置：${state.currentAddr}`);
                 render();
             }
         }).catch(() => {});
 }
-
 function onInput() {
     const kw = elKeyword.value.trim();
     state.keyword = kw;
@@ -385,30 +335,27 @@ function calcDistance(lng1, lat1, lng2, lat2) {
 function pickSuggestion(el) {
     const p = { name: el.dataset.name, lon: el.dataset.lon, lat: el.dataset.lat };
     if (!p.name || !isValidCoord(p.lon, p.lat)) { toast('该地点缺少坐标，请换一个'); elSuggestBox.innerHTML = ''; return; }
-    state.addresses.push({ id: genId(), name: p.name, remark: '', lon: parseFloat(p.lon), lat: parseFloat(p.lat) });
+    state.addresses.push({ id: genId(), name: p.name, lon: parseFloat(p.lon), lat: parseFloat(p.lat), remark: '' });
     save(); elKeyword.value = ''; elSuggestBox.innerHTML = ''; toast('已添加'); render();
 }
 
 function addCurrentLocation() {
-    if (!state.currentPos) { toast('暂未获取到当前位置'); return; }
-    if (!isValidCoord(state.currentPos.lng, state.currentPos.lat)) { toast('当前定位坐标无效'); return; }
-    
-    if (state.rawPos && state.rawPos.accuracy > 100) {
-        toast(`当前定位精度不足（${formatAccuracy(state.rawPos.accuracy)}），请刷新后重试`);
-        return;
-    }
-    if (state.addresses.find(a => a._isCurrent)) { toast('当前位置已在列表中'); return; }
-    const name = state.currentAddr ? `📍 当前位置（${state.currentAddr}）` : '📍 当前位置';
-    
-    state.addresses.unshift({ 
-        id: genId(), 
-        name, 
-        remark: `精度${formatAccuracy(state.rawPos?.accuracy)}`, 
-        lon: state.currentPos.lng, 
-        lat: state.currentPos.lat, 
-        _isCurrent: true 
-    });
-    save(); toast('已添加当前位置（高精度）'); render();
+    if (!state.currentPos) { toast('暂未获取到当前位置，请先点刷新'); return; }
+    if (!isValidCoord(state.currentPos.lng, state.currentPos.lat)) { toast('当前定位坐标无效，请刷新重试'); return; }
+
+    const acc = state.rawPos ? state.rawPos.accuracy : null;
+    if (acc > 100) toast('定位精度较低，已按大致位置添加');
+
+    const time = new Date();
+    const hh = String(time.getHours()).padStart(2, '0');
+    const mm = String(time.getMinutes()).padStart(2, '0');
+    const addrPart = state.currentAddr || '附近';
+    const name = `📍 当前位置 ${hh}:${mm}（${addrPart}）`;
+    const remark = acc ? `精度约${formatAccuracy(acc)}` : '';
+
+    state.addresses.unshift({ id: genId(), name, lon: state.currentPos.lng, lat: state.currentPos.lat, _fromCurrent: true, remark });
+    save(); render();
+    toast('已记录此刻位置');
 }
 
 function manualAdd() {
@@ -416,14 +363,14 @@ function manualAdd() {
     if (!name) { toast('请输入地名'); return; }
     if (state.currentPos) {
         if (!isValidCoord(state.currentPos.lng, state.currentPos.lat)) { toast('当前定位坐标无效'); return; }
-        state.addresses.push({ id: genId(), name, remark: '', lon: state.currentPos.lng, lat: state.currentPos.lat });
+        state.addresses.push({ id: genId(), name, lon: state.currentPos.lng, lat: state.currentPos.lat, remark: '' });
         save(); elKeyword.value = ''; toast('已添加（坐标为当前位置）'); render();
     } else {
         const coord = prompt('未定位，请输入经纬度（经度,纬度，如 109.73,38.28）');
         if (!coord) return;
         const parts = coord.split(',').map(Number);
         if (parts.length !== 2 || !isValidCoord(parts[0], parts[1])) { toast('格式错误或坐标超范围'); return; }
-        state.addresses.push({ id: genId(), name, remark: '', lon: parts[0], lat: parts[1] });
+        state.addresses.push({ id: genId(), name, lon: parts[0], lat: parts[1], remark: '' });
         save(); elKeyword.value = ''; render();
     }
 }
@@ -434,34 +381,35 @@ function deleteAddr(id) {
     if (idx > -1) { state.addresses.splice(idx, 1); save(); render(); }
 }
 
+let editingId = null;
+
 function openEdit(id) {
     const addr = state.addresses.find(a => a.id === id);
     if (!addr) return;
-    state.editingId = id;
-    elEditName.value = addr.name || '';
-    elEditRemark.value = addr.remark || '';
-    elEditModal.style.display = 'flex';
-    elEditName.focus();
+    editingId = id;
+    $('editName').value = addr.name || '';
+    $('editRemark').value = addr.remark || '';
+    $('editModal').style.display = 'flex';
+    setTimeout(() => $('editName').focus(), 50);
 }
-
 function closeEdit() {
-    state.editingId = null;
-    elEditModal.style.display = 'none';
+    editingId = null;
+    $('editModal').style.display = 'none';
+}
+function saveEdit() {
+    const addr = state.addresses.find(a => a.id === editingId);
+    if (!addr) { closeEdit(); return; }
+    const newName = $('editName').value.trim();
+    if (!newName) { toast('名称不能为空'); $('editName').focus(); return; }
+    addr.name = newName;
+    addr.remark = $('editRemark').value.trim();
+    save(); closeEdit(); render();
+    toast('已保存');
 }
 
-function saveEdit() {
-    const name = elEditName.value.trim();
-    if (!name) { toast('地址名称不能为空'); elEditName.focus(); return; }
-    const idx = state.addresses.findIndex(a => a.id === state.editingId);
-    if (idx > -1) {
-        state.addresses[idx].name = name;
-        state.addresses[idx].remark = elEditRemark.value.trim();
-        save();
-        render();
-        toast('修改成功');
-        closeEdit();
-    }
-}
+window.openEdit = openEdit;
+window.closeEdit = closeEdit;
+window.saveEdit = saveEdit;
 
 function jumpToNav(a) {
     if (!a) return;
@@ -474,51 +422,50 @@ function jumpToNav(a) {
     const slon = state.currentPos ? state.currentPos.lng : '';
     let scheme;
     if (state.currentPos) {
-        scheme = `iosamap://path?sourceApplication=navapp&sid=current&slat=${slat}&slon=${slon}&sname=我的位置&dlat=${lat}&dlon=${lon}&dname=${encodeURIComponent(name)}&t=0&dev=0`;
+        scheme = `iosamap://path?sourceApplication=navapp&sid=current&slat=${slat}&slon=${slon}&sname=我的位置&dlat=${lat}&dlon=${lon}&dname=${encodeURIComponent(name)}&t=0`;
     } else {
         scheme = `iosamap://navi?sourceApplication=navapp&poiname=${encodeURIComponent(name)}&lat=${lat}&lon=${lon}&dev=0&style=2`;
     }
     const web = `https://uri.amap.com/navigation?to=${lon},${lat},${encodeURIComponent(name)}&mode=car&policy=1`;
 
-    elDiag.textContent = `跳转: ${name}\n坐标: ${lat},${lon}\n精度: ${formatAccuracy(state.rawPos?.accuracy)}\n${scheme}`;
+    elDiag.textContent = `跳转: ${name}\n坐标: ${lat},${lon}\n${scheme}`;
     console.log('跳转高德:', name, lat, lon, scheme);
 
     window.location.href = scheme;
-
     const t = Date.now();
     setTimeout(() => {
         if (Date.now() - t < 2000 && !document.hidden) window.open(web, '_blank');
     }, 1500);
 }
 
-function sortedAddresses() {
+function sortedAddresses() 
+    if (!state.currentPos) return state.addresses.slice();
     return state.addresses.slice().sort((a, b) => {
-        if (a._isCurrent && !b._isCurrent) return -1;
-        if (!a._isCurrent && b._isCurrent) return 1;
-        if (!state.currentPos) return 0;
-        return calcDistance(state.currentPos.lng, state.currentPos.lat, a.lon, a.lat)
-             - calcDistance(state.currentPos.lng, state.currentPos.lat, b.lon, b.lat);
+        const da = calcDistance(state.currentPos.lng, state.currentPos.lat, a.lon, a.lat);
+        const db = calcDistance(state.currentPos.lng, state.currentPos.lat, b.lon, b.lat);
+        return da - db;
     });
 }
 function render() {
-    elLocAction.style.display = (state.currentAddr && state.rawPos?.accuracy <= 100) ? 'block' : 'none';
+    elLocAction.style.display = state.currentPos ? 'block' : 'none';
     if (!state.addresses.length) { elListBox.innerHTML = ''; elEmptyBox.style.display = 'block'; return; }
     elEmptyBox.style.display = 'none';
-    elListBox.innerHTML = `<div class="list-title">已添加地址（点击跳转导航）</div>` + sortedAddresses().map(a => {
-        const dist = (state.currentPos && !a._isCurrent) ? `<span class="addr-dist">· ${formatDist(calcDistance(state.currentPos.lng, state.currentPos.lat, a.lon, a.lat))}</span>` : '';
-        const cur = a._isCurrent ? `<span class="addr-dist">当前位置（${a.remark}）</span>` : '';
-        const remarkHtml = a.remark ? `<div class="addr-remark">${escapeHtml(a.remark)}</div>` : '';
+    elListBox.innerHTML = `<div class="list-title">已添加地址（点击跳转导航 · ✏️可改名）</div>` + sortedAddresses().map(a => {
+        const dist = state.currentPos ? `<span class="addr-dist">· ${formatDist(calcDistance(state.currentPos.lng, state.currentPos.lat, a.lon, a.lat))}</span>` : '';
+        const remarkHtml = a.remark
+            ? `<div class="addr-remark">${escapeHtml(a.remark)}</div>`
+            : `<div class="addr-remark empty">点击 ✏️ 添加备注</div>`;
         return `<div class="addr-card" data-id="${a.id}">
-            <div class="addr-icon">${a._isCurrent ? '🧭' : '📍'}</div>
+            <div class="addr-icon">${a._fromCurrent ? '🧭' : '📍'}</div>
             <div class="addr-info">
                 <div class="addr-name">${escapeHtml(a.name)}</div>
+                <div class="addr-coord">${a.lat.toFixed(4)}, ${a.lon.toFixed(4)}${dist}</div>
                 ${remarkHtml}
-                <div class="addr-coord">${a.lat.toFixed(4)}, ${a.lon.toFixed(4)}${dist}${cur}</div>
             </div>
-            <div class="addr-actions">
-                <span class="addr-edit" data-edit="${a.id}">✏️</span>
-                <span class="addr-delete" data-del="${a.id}">×</span>
+            <div class="addr-edit" data-edit="${a.id}" title="编辑名称/备注">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
             </div>
+            <div class="addr-delete" data-del="${a.id}">×</div>
         </div>`;
     }).join('');
 }
@@ -533,12 +480,14 @@ elSuggestBox.addEventListener('mousedown', (e) => {
 $('addBtn').addEventListener('click', manualAdd);
 $('refreshBtn').addEventListener('click', () => getCurrentLocation(false));
 $('locAction').addEventListener('click', addCurrentLocation);
+$('editModal').addEventListener('click', (e) => { if (e.target === $('editModal')) closeEdit(); });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeEdit(); });
 
 elListBox.addEventListener('click', (e) => {
     const editBtn = e.target.closest('.addr-edit');
-    const delBtn = e.target.closest('.addr-delete');
     if (editBtn) { e.stopPropagation(); openEdit(editBtn.dataset.edit); return; }
-    if (delBtn) { e.stopPropagation(); deleteAddr(delBtn.dataset.del); return; }
+    const del = e.target.closest('.addr-delete');
+    if (del) { e.stopPropagation(); deleteAddr(del.dataset.del); return; }
     const card = e.target.closest('.addr-card');
     if (card) {
         const id = card.dataset.id;
@@ -546,12 +495,6 @@ elListBox.addEventListener('click', (e) => {
         jumpToNav(addr);
     }
 });
-
-$('editCancel').addEventListener('click', closeEdit);
-$('editSave').addEventListener('click', saveEdit);
-elEditModal.addEventListener('click', (e) => { if (e.target === elEditModal) closeEdit(); });
-elEditName.addEventListener('keydown', (e) => { if (e.key === 'Enter') elEditRemark.focus(); });
-elEditRemark.addEventListener('keydown', (e) => { if (e.key === 'Enter') saveEdit(); });
 
 
 load();
